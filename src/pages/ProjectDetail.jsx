@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+﻿import { useParams, Link } from "react-router-dom";
+import { useEffect, useRef } from "react";
 
 const STATUS_LABELS = {
   "in-progress": "🚧 In Progress",
@@ -6,9 +7,17 @@ const STATUS_LABELS = {
   archived: "📦 Archived",
 };
 
-function ProjectDetail({ projects, onShare }) {
+function ProjectDetail({ projects, onShare, onView }) {
   const { id } = useParams();
   const project = projects.find((p) => p.id === Number(id));
+  const hasCountedView = useRef(false);
+
+  useEffect(() => {
+    if (!hasCountedView.current && project && onView) {
+      onView(project.id);
+      hasCountedView.current = true;
+    }
+  }, [project, onView]);
 
   if (!project) {
     return (
@@ -37,7 +46,7 @@ function ProjectDetail({ projects, onShare }) {
           </span>
         ))}
       </div>
-      <p>Likes: {project.likes}</p>
+      <p>Likes: {project.likes} &nbsp;·&nbsp; 👁️ {project.views || 0} views</p>
       <div className="detail-actions">
         <a href={project.link} target="_blank" rel="noopener noreferrer">
           View on GitHub

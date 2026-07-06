@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ConfirmModal from "./ConfirmModal";
 
@@ -59,6 +59,9 @@ function ProjectCard({
       <a href={project.link} target="_blank" rel="noopener noreferrer">
         View on GitHub
       </a>
+      {typeof project.views === "number" && (
+        <span className="view-count">👁️ {project.views} views</span>
+      )}
       <div className="card-actions">
         <button onClick={() => onLike(project.id)} className="like-button">
           Like ({project.likes})

@@ -1,4 +1,4 @@
-import StatsBar from "./components/StatsBar";
+﻿import StatsBar from "./components/StatsBar";
 import Hero from "./components/Hero";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
@@ -14,6 +14,7 @@ import EditProject from "./pages/EditProject";
 import Profile from "./pages/Profile";
 import Favorites from "./pages/Favorites";
 import Toast from "./components/Toast";
+import Confetti from "./components/Confetti";
 
 function HomePage({
   projects,
@@ -34,6 +35,26 @@ function HomePage({
   onImportClick,
   onExport,
 }) {
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      const tag = document.activeElement?.tagName;
+      const isTyping = tag === "INPUT" || tag === "TEXTAREA";
+
+      if (e.key === "/" && !isTyping) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === "Escape" && isTyping) {
+        setSearchTerm("");
+        searchInputRef.current?.blur();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [setSearchTerm]);
+
   const totalProjects = projects.length;
   const totalLikes = projects.reduce((sum, p) => sum + p.likes, 0);
 
@@ -76,8 +97,9 @@ function HomePage({
       <div className="search-wrapper">
         <span className="search-icon">🔍</span>
         <input
+          ref={searchInputRef}
           type="text"
-          placeholder="Search by title, description, or tech..."
+          placeholder="Search by title, description, or tech... (press / to focus)"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-bar"
@@ -181,6 +203,7 @@ function App() {
   const [toastType, setToastType] = useState("success");
   const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef(null);
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 700);
@@ -247,8 +270,19 @@ function App() {
   }
 
   function handleAddProject(newProject) {
-    setProjects((prevProjects) => [...prevProjects, newProject]);
+    setProjects((prevProjects) => [...prevProjects, { ...newProject, views: 0 }]);
     showToast("Project added!", "success");
+    setConfettiTrigger((prev) => prev + 1);
+  }
+
+  function handleViewProject(id) {
+    setProjects((prevProjects) =>
+      prevProjects.map((project) =>
+        project.id === id
+          ? { ...project, views: (project.views || 0) + 1 }
+          : project
+      )
+    );
   }
 
   function handleUpdateProject(updatedProject) {
@@ -329,6 +363,7 @@ function App() {
         onChange={handleImportFile}
         style={{ display: "none" }}
       />
+      <Confetti trigger={confettiTrigger} />
       <Routes>
         <Route
           path="/"
@@ -355,7 +390,12 @@ function App() {
           }
         />
         <Route path="/add" element={<AddProjectPage onAdd={handleAddProject} />} />
-        <Route path="/project/:id" element={<ProjectDetail projects={projects} onShare={handleShare} />} />
+        <Route
+          path="/project/:id"
+          element={
+            <ProjectDetail projects={projects} onShare={handleShare} onView={handleViewProject} />
+          }
+        />
         <Route
           path="/edit/:id"
           element={<EditProject projects={projects} onUpdate={handleUpdateProject} />}
